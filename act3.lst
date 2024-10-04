@@ -1,0 +1,352 @@
+---------------------------------------------
+OSHONSOFT Z80 ASSEMBLER LISTING
+Line   Addr Opcode      Label   Instruction
+---------------------------------------------
+0001   0000                 ORG 0000h         ; Origen del código
+0002   0000             
+0003   0000             ; =======================================
+0004   0000             ; Inicio del programa principal
+0005   0000             ; =======================================
+0006   0000             START:
+0007   0000 CD 40 00        CALL INIT_PPI           ; Inicializar el PPI
+0008   0003 CD 45 00        CALL PRINT_START_TEXT   ; Mostrar mensaje de inicio
+0009   0006 CD 69 00        CALL GENERATE_NUMBERS   ; Generar 20 números aleatorios
+0010   0009 CD 7C 00        CALL PRINT_NUMBERS      ; Mostrar los números generados
+0011   000C             
+0012   000C             ASK_SORT_ORDER:
+0013   000C CD A8 00        CALL PRINT_SORT_TEXT    ; Preguntar cómo ordenar
+0014   000F CD 4A 01        CALL READ_INPUT         ; Leer la opción del usuario (A: ascendente, D: descendente)
+0015   0012 FE 41           CP 'A'
+0016   0014 28 04           JR Z, SORT_ASCENDING    ; Si es 'A', ordenar ascendente
+0017   0016 FE 44           CP 'D'
+0018   0018 28 08           JR Z, SORT_DESCENDING   ; Si es 'D', ordenar descendente
+0019   001A             
+0020   001A             SORT_ASCENDING:
+0021   001A CD E0 00        CALL SORT_NUMBERS_ASC   ; Ordenar los números en forma ascendente
+0022   001D CD 89 00        CALL PRINT_SORTED_NUMBERS ; Mostrar los números ordenados
+0023   0020 18 08           JR ASK_RETRY            ; Saltar para preguntar si repetir el programa
+0024   0022             
+0025   0022             SORT_DESCENDING:
+0026   0022 CD EA 00        CALL SORT_NUMBERS_DESC  ; Ordenar los números en forma descendente
+0027   0025 CD 89 00        CALL PRINT_SORTED_NUMBERS ; Mostrar los números ordenados
+0028   0028 18 00           JR ASK_RETRY            ; Saltar para preguntar si repetir el programa
+0029   002A             
+0030   002A             ASK_RETRY:
+0031   002A CD 50 01        CALL PRINT_RETRY_TEXT   ; Preguntar si desea continuar
+0032   002D CD 4A 01        CALL READ_INPUT         ; Leer entrada del usuario (R: repetir, S: salir)
+0033   0030 FE 52           CP 'R'
+0034   0032 28 CC           JR Z, START             ; Si es 'R', reiniciar el programa
+0035   0034 FE 53           CP 'S'
+0036   0036 28 02           JR Z, EXIT_PROGRAM      ; Si es 'S', salir del programa
+0037   0038 18 F0           JR ASK_RETRY            ; Volver a preguntar si no es 'R' ni 'S'
+0038   003A             
+0039   003A             EXIT_PROGRAM:
+0040   003A CD BA 01        CALL PRINT_EXIT_TEXT    ; Mostrar mensaje de salida
+0041   003D C3 00 00        JP START                ; Reiniciar el programa (en sistemas reales, aquí se apagaría o finalizaría)
+0042   0040             
+0043   0040             ; =======================================
+0044   0040             ; Subrutina: Inicialización del PPI
+0045   0040             ; =======================================
+0046   0040             INIT_PPI:
+0047   0040 3E 92           LD A, 10010010B         ; Configurar PPI: puerto A salida, puerto B entrada, modo 0
+0048   0042 D3 03           OUT (0x03), A           ; Enviar configuración al registro de control del PPI
+0049   0044 C9              RET
+0050   0045             
+0051   0045             ; =======================================
+0052   0045             ; Subrutina: Mostrar texto de inicio
+0053   0045             ; =======================================
+0054   0045             PRINT_START_TEXT:
+0055   0045 3E 49           LD A, 'I'
+0056   0047 CD 4D 01        CALL PRINT_CHAR
+0057   004A 3E 6E           LD A, 'n'
+0058   004C CD 4D 01        CALL PRINT_CHAR
+0059   004F 3E 69           LD A, 'i'
+0060   0051 CD 4D 01        CALL PRINT_CHAR
+0061   0054 3E 63           LD A, 'c'
+0062   0056 CD 4D 01        CALL PRINT_CHAR
+0063   0059 3E 69           LD A, 'i'
+0064   005B CD 4D 01        CALL PRINT_CHAR
+0065   005E 3E 61           LD A, 'a'
+0066   0060 CD 4D 01        CALL PRINT_CHAR
+0067   0063 3E 72           LD A, 'r'
+0068   0065 CD 4D 01        CALL PRINT_CHAR
+0069   0068 C9              RET
+0070   0069             
+0071   0069             ; =======================================
+0072   0069             ; Subrutina: Generar 20 números pseudoaleatorios
+0073   0069             ; =======================================
+0074   0069             GENERATE_NUMBERS:
+0075   0069 21 CA 01        LD HL, RANDOM_AREA      ; Apuntar al área de memoria donde guardaremos los números
+0076   006C 06 14           LD B, 20                ; Generar 20 números
+0077   006E             GENERATE_LOOP:
+0078   006E CD 76 00        CALL RANDOM_NUMBER      ; Llamar a la subrutina de números aleatorios
+0079   0071 77              LD (HL), A              ; Almacenar el número en la memoria
+0080   0072 23              INC HL                  ; Siguiente posición de memoria
+0081   0073 10 F9           DJNZ GENERATE_LOOP      ; Repetir hasta que generemos 20 números
+0082   0075 C9              RET
+0083   0076             
+0084   0076             ; =======================================
+0085   0076             ; Subrutina: Generar un número pseudoaleatorio
+0086   0076             ; (Un ejemplo simple de un generador basado en un desplazamiento de bits)
+0087   0076             ; =======================================
+0088   0076             RANDOM_NUMBER:
+0089   0076 ED 5F           LD A, R                 ; Usar el registro 'R' como base (es un registro de refresco en Z80)
+0090   0078 07              RLCA                    ; Rotar el acumulador a la izquierda
+0091   0079 EE 6C           XOR 01101100B           ; Aplicar una operación XOR para generar variación
+0092   007B C9              RET
+0093   007C             
+0094   007C             ; =======================================
+0095   007C             ; Subrutina: Mostrar los números generados en pantalla
+0096   007C             ; =======================================
+0097   007C             PRINT_NUMBERS:
+0098   007C 21 CA 01        LD HL, RANDOM_AREA      ; Apuntar al área de memoria donde están los números
+0099   007F 06 14           LD B, 20                ; Imprimir 20 números
+0100   0081             PRINT_LOOP:
+0101   0081 7E              LD A, (HL)              ; Cargar el número actual
+0102   0082 CD 96 00        CALL PRINT_NUMBER       ; Llamar a la subrutina para imprimirlo
+0103   0085 23              INC HL                  ; Apuntar al siguiente número
+0104   0086 10 F9           DJNZ PRINT_LOOP         ; Repetir para los 20 números
+0105   0088 C9              RET
+0106   0089             
+0107   0089             ; =======================================
+0108   0089             ; Subrutina: Mostrar los números ordenados en pantalla
+0109   0089             ; =======================================
+0110   0089             PRINT_SORTED_NUMBERS:
+0111   0089 21 DE 01        LD HL, SORTED_AREA      ; Apuntar al área de memoria donde están los números ordenados
+0112   008C 06 14           LD B, 20                ; Imprimir 20 números
+0113   008E             PRINT_SORTED_LOOP:
+0114   008E 7E              LD A, (HL)              ; Cargar el número actual
+0115   008F CD 96 00        CALL PRINT_NUMBER       ; Llamar a la subrutina para imprimirlo
+0116   0092 23              INC HL                  ; Apuntar al siguiente número
+0117   0093 10 F9           DJNZ PRINT_SORTED_LOOP  ; Repetir para los 20 números
+0118   0095 C9              RET
+0119   0096             
+0120   0096             ; =======================================
+0121   0096             ; Subrutina: Imprimir un número en decimal (0-255)
+0122   0096             ; =======================================
+0123   0096             PRINT_NUMBER:
+0124   0096 CD 2A 01        CALL DIVIDE_BY_100      ; Dividir A por 100 (resultado en B, residuo en A)
+0125   0099 CD 4D 01        CALL PRINT_CHAR         ; Imprimir el dígito de las centenas
+0126   009C CD 3A 01        CALL DIVIDE_BY_10       ; Dividir A por 10 (resultado en B, residuo en A)
+0127   009F CD 4D 01        CALL PRINT_CHAR         ; Imprimir el dígito de las decenas
+0128   00A2 C6 30           ADD A, 48               ; Convertir a carácter ASCII el dígito de las unidades
+0129   00A4 CD 4D 01        CALL PRINT_CHAR         ; Imprimir el dígito de las unidades
+0130   00A7 C9              RET
+0131   00A8             
+0132   00A8             ; =======================================
+0133   00A8             ; Subrutina: Preguntar cómo ordenar los números
+0134   00A8             ; =======================================
+0135   00A8             PRINT_SORT_TEXT:
+0136   00A8 3E 4F           LD A, 'O'
+0137   00AA CD 4D 01        CALL PRINT_CHAR
+0138   00AD 3E 72           LD A, 'r'
+0139   00AF CD 4D 01        CALL PRINT_CHAR
+0140   00B2 3E 64           LD A, 'd'
+0141   00B4 CD 4D 01        CALL PRINT_CHAR
+0142   00B7 3E 65           LD A, 'e'
+0143   00B9 CD 4D 01        CALL PRINT_CHAR
+0144   00BC 3E 6E           LD A, 'n'
+0145   00BE CD 4D 01        CALL PRINT_CHAR
+0146   00C1 3E 61           LD A, 'a'
+0147   00C3 CD 4D 01        CALL PRINT_CHAR
+0148   00C6 3E 72           LD A, 'r'
+0149   00C8 CD 4D 01        CALL PRINT_CHAR
+0150   00CB 3E 20           LD A, ' '
+0151   00CD CD 4D 01        CALL PRINT_CHAR
+0152   00D0 3E 41           LD A, 'A'
+0153   00D2 CD 4D 01        CALL PRINT_CHAR
+0154   00D5 3E 2F           LD A, '/'
+0155   00D7 CD 4D 01        CALL PRINT_CHAR
+0156   00DA 3E 44           LD A, 'D'
+0157   00DC CD 4D 01        CALL PRINT_CHAR
+0158   00DF C9              RET
+0159   00E0             
+0160   00E0             ; =======================================
+0161   00E0             ; Subrutina: Ordenar los números de forma ascendente
+0162   00E0             ; =======================================
+0163   00E0             SORT_NUMBERS_ASC:
+0164   00E0 21 CA 01        LD HL, RANDOM_AREA      ; Apuntar al inicio de los números
+0165   00E3 11 DE 01        LD DE, SORTED_AREA      ; Apuntar al área de memoria para los números ordenados
+0166   00E6 CD F4 00        CALL BUBBLE_SORT_ASC    ; Llamar al algoritmo de ordenación (burbuja)
+0167   00E9 C9              RET
+0168   00EA             
+0169   00EA             ; =======================================
+0170   00EA             ; Subrutina: Ordenar los números de forma descendente
+0171   00EA             ; =======================================
+0172   00EA             SORT_NUMBERS_DESC:
+0173   00EA 21 CA 01        LD HL, RANDOM_AREA      ; Apuntar al inicio de los números
+0174   00ED 11 DE 01        LD DE, SORTED_AREA      ; Apuntar al área de memoria para los números ordenados
+0175   00F0 CD 0F 01        CALL BUBBLE_SORT_DESC   ; Llamar al algoritmo de ordenación (burbuja)
+0176   00F3 C9              RET
+0177   00F4             
+0178   00F4             ; =======================================
+0179   00F4             ; Subrutina: Algoritmo de ordenación (Burbuja Ascendente)
+0180   00F4             ; =======================================
+0181   00F4             BUBBLE_SORT_ASC:
+0182   00F4 01 13 00        LD BC, 19               ; 20 elementos, por lo tanto hacer 19 pasadas
+0183   00F7             ASC_SORT_PASS:
+0184   00F7 21 DE 01        LD HL, SORTED_AREA      ; Apuntar al inicio del área de números
+0185   00FA 16 13           LD D, 19                ; Comparar 19 pares
+0186   00FC             ASC_COMPARE:
+0187   00FC 7E              LD A, (HL)
+0188   00FD 5F              LD E, A                 ; Guardar el primer número en E
+0189   00FE 23              INC HL
+0190   00FF 7E              LD A, (HL)              ; Cargar el segundo número
+0191   0100 BB              CP E                    ; Comparar el segundo número con el primero
+0192   0101 30 04           JR NC, ASC_NEXT_PAIR    ; Si está en el orden correcto, saltar
+0193   0103 73              LD (HL), E              ; Si no, intercambiar
+0194   0104 2B              DEC HL
+0195   0105 77              LD (HL), A
+0196   0106 23              INC HL
+0197   0107             ASC_NEXT_PAIR:
+0198   0107 15              DEC D
+0199   0108 20 F2           JR NZ, ASC_COMPARE      ; Continuar comparando pares
+0200   010A 0B              DEC BC
+0201   010B C2 F7 00        JP NZ, ASC_SORT_PASS    ; Hacer la siguiente pasada
+0202   010E C9              RET
+0203   010F             
+0204   010F             ; =======================================
+0205   010F             ; Subrutina: Algoritmo de ordenación (Burbuja Descendente)
+0206   010F             ; =======================================
+0207   010F             BUBBLE_SORT_DESC:
+0208   010F 01 13 00        LD BC, 19               ; 20 elementos, por lo tanto hacer 19 pasadas
+0209   0112             DESC_SORT_PASS:
+0210   0112 21 DE 01        LD HL, SORTED_AREA      ; Apuntar al inicio del área de números
+0211   0115 16 13           LD D, 19                ; Comparar 19 pares
+0212   0117             DESC_COMPARE:
+0213   0117 7E              LD A, (HL)
+0214   0118 5F              LD E, A                 ; Guardar el primer número en E
+0215   0119 23              INC HL
+0216   011A 7E              LD A, (HL)              ; Cargar el segundo número
+0217   011B BB              CP E                    ; Comparar el segundo número con el primero
+0218   011C 38 04           JR C, DESC_NEXT_PAIR    ; Si está en el orden correcto, saltar
+0219   011E 73              LD (HL), E              ; Si no, intercambiar
+0220   011F 2B              DEC HL
+0221   0120 77              LD (HL), A
+0222   0121 23              INC HL
+0223   0122             DESC_NEXT_PAIR:
+0224   0122 15              DEC D
+0225   0123 20 F2           JR NZ, DESC_COMPARE     ; Continuar comparando pares
+0226   0125 0B              DEC BC
+0227   0126 C2 12 01        JP NZ, DESC_SORT_PASS   ; Hacer la siguiente pasada
+0228   0129 C9              RET
+0229   012A             
+0230   012A             ; =======================================
+0231   012A             ; Subrutinas auxiliares: Dividir por 100 y 10
+0232   012A             ; =======================================
+0233   012A             DIVIDE_BY_100:
+0234   012A 06 00           LD B, 0                 ; Inicializar el cociente
+0235   012C             DIV100_LOOP:
+0236   012C FE 64           CP 100
+0237   012E 38 06           JR C, DIV100_END
+0238   0130 D6 64           SUB 100
+0239   0132 04              INC B
+0240   0133 C3 2C 01        JP DIV100_LOOP
+0241   0136             DIV100_END:
+0242   0136 78              LD A, B
+0243   0137 C6 30           ADD A, 48               ; Convertir a ASCII
+0244   0139 C9              RET
+0245   013A             
+0246   013A             DIVIDE_BY_10:
+0247   013A 06 00           LD B, 0                 ; Inicializar el cociente
+0248   013C             DIV10_LOOP:
+0249   013C FE 0A           CP 10
+0250   013E 38 06           JR C, DIV10_END
+0251   0140 D6 0A           SUB 10
+0252   0142 04              INC B
+0253   0143 C3 3C 01        JP DIV10_LOOP
+0254   0146             DIV10_END:
+0255   0146 78              LD A, B
+0256   0147 C6 30           ADD A, 48               ; Convertir a ASCII
+0257   0149 C9              RET
+0258   014A             
+0259   014A             ; =======================================
+0260   014A             ; Subrutina: Leer entrada del usuario
+0261   014A             ; =======================================
+0262   014A             READ_INPUT:
+0263   014A DB 01           IN A, (0x01)            ; Leer del puerto del teclado o un puerto PPI
+0264   014C C9              RET
+0265   014D             
+0266   014D             ; =======================================
+0267   014D             ; Subrutina: Imprimir un carácter en pantalla
+0268   014D             ; =======================================
+0269   014D             PRINT_CHAR:
+0270   014D D3 02           OUT (0x02), A           ; Enviar el carácter al puerto de salida
+0271   014F C9              RET
+0272   0150             ; =======================================
+0273   0150             ; Subrutina: Preguntar si desea repetir o salir
+0274   0150             ; =======================================
+0275   0150             PRINT_RETRY_TEXT:
+0276   0150 3E 52           LD A, 'R'
+0277   0152 CD 4D 01        CALL PRINT_CHAR
+0278   0155 3E 3A           LD A, ':'
+0279   0157 CD 4D 01        CALL PRINT_CHAR
+0280   015A 3E 20           LD A, ' '
+0281   015C CD 4D 01        CALL PRINT_CHAR
+0282   015F 3E 52           LD A, 'R'
+0283   0161 CD 4D 01        CALL PRINT_CHAR
+0284   0164 3E 65           LD A, 'e'
+0285   0166 CD 4D 01        CALL PRINT_CHAR
+0286   0169 3E 70           LD A, 'p'
+0287   016B CD 4D 01        CALL PRINT_CHAR
+0288   016E 3E 65           LD A, 'e'
+0289   0170 CD 4D 01        CALL PRINT_CHAR
+0290   0173 3E 74           LD A, 't'
+0291   0175 CD 4D 01        CALL PRINT_CHAR
+0292   0178 3E 69           LD A, 'i'
+0293   017A CD 4D 01        CALL PRINT_CHAR
+0294   017D 3E 72           LD A, 'r'
+0295   017F CD 4D 01        CALL PRINT_CHAR
+0296   0182 3E 20           LD A, ' '
+0297   0184 CD 4D 01        CALL PRINT_CHAR
+0298   0187 3E 2F           LD A, '/'
+0299   0189 CD 4D 01        CALL PRINT_CHAR
+0300   018C 3E 20           LD A, ' '
+0301   018E CD 4D 01        CALL PRINT_CHAR
+0302   0191 3E 53           LD A, 'S'
+0303   0193 CD 4D 01        CALL PRINT_CHAR
+0304   0196 3E 3A           LD A, ':'
+0305   0198 CD 4D 01        CALL PRINT_CHAR
+0306   019B 3E 20           LD A, ' '
+0307   019D CD 4D 01        CALL PRINT_CHAR
+0308   01A0 3E 53           LD A, 'S'
+0309   01A2 CD 4D 01        CALL PRINT_CHAR
+0310   01A5 3E 61           LD A, 'a'
+0311   01A7 CD 4D 01        CALL PRINT_CHAR
+0312   01AA 3E 6C           LD A, 'l'
+0313   01AC CD 4D 01        CALL PRINT_CHAR
+0314   01AF 3E 69           LD A, 'i'
+0315   01B1 CD 4D 01        CALL PRINT_CHAR
+0316   01B4 3E 72           LD A, 'r'
+0317   01B6 CD 4D 01        CALL PRINT_CHAR
+0318   01B9 C9              RET
+0319   01BA             ; =======================================
+0320   01BA             ; Subrutina: Mostrar texto de salida
+0321   01BA             ; =======================================
+0322   01BA             PRINT_EXIT_TEXT:
+0323   01BA 3E 46           LD A, 'F'
+0324   01BC CD 4D 01        CALL PRINT_CHAR
+0325   01BF 3E 69           LD A, 'i'
+0326   01C1 CD 4D 01        CALL PRINT_CHAR
+0327   01C4 3E 6E           LD A, 'n'
+0328   01C6 CD 4D 01        CALL PRINT_CHAR
+0329   01C9 C9              RET
+0330   01CA             
+0331   01CA             ; =======================================
+0332   01CA             ; Área de datos
+0333   01CA             ; =======================================
+0334   01CA             RANDOM_AREA:
+0335   01CA 00 00 00 00     DS 20                  ; Espacio para 20 números aleatorios
+0335   01CE 00 00 00 00 
+0335   01D2 00 00 00 00 
+0335   01D6 00 00 00 00 
+0335   01DA 00 00 00 00 
+0336   01DE             
+0337   01DE             SORTED_AREA:
+0338   01DE 00 00 00 00     DS 20                  ; Espacio para los números ordenados
+0338   01E2 00 00 00 00 
+0338   01E6 00 00 00 00 
+0338   01EA 00 00 00 00 
+0338   01EE 00 00 00 00 
+0339   01F2             
+Number of errors = 0
