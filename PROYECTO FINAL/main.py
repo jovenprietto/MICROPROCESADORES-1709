@@ -200,6 +200,4 @@ while True:
         client2.disconnect()
         red.disconnect()
         break
-
-        break
 #=======================================================
